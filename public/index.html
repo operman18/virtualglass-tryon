@@ -207,9 +207,7 @@
        var connect2Websocket = function(){
            if ("WebSocket" in window) {
 
-	       //var ws_path = 'ws://' + window.location.host + window.location.pathname + 'ws';
-	       //alert(ws_path);
-	       var ws_path = 'ws://127.0.0.1:8080/ws';//ws://' + '127.0.0.1:8080/' + 'ws';
+	       var ws_path = 'ws://' + window.location.host + window.location.pathname + 'ws';
 	       var ws = new WebSocket (ws_path);
 
 	       

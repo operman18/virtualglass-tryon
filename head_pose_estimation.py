@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 
 #The MIT License (MIT)
-#Copyright (c) 2016 Massimiliano Patacchiola
+#Copyright (c) 2018 Operman Levy
 #
 #THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF 
 #MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY 
@@ -26,7 +26,7 @@ BLENDSHAPES = os.path.join(app_directory,"files/expression_blendshapes_3448.bin"
 L_MAPPER = os.path.join(app_directory,"files/ibug_to_sfm.txt")
 TOPOLOGY = os.path.join(app_directory,"files/sfm_3448_edge_topology.json")
 CONTOUR_L = os.path.join(app_directory,"files/ibug_to_sfm.txt")
-CONTOUR_M = os.path.join(app_directory,"files/model_contours.json")
+CONTOUR_M = os.path.join(app_directory,"files/sfm_model_contours.json")
 
 class PnpHeadPoseEstimator:
     """ Head pose estimation class which uses the OpenCV PnP algorithm.
