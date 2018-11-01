@@ -1,0 +1,8 @@
+coils==1.0.9
+dlib==19.15.0
+eos-py==0.16.1
+imutils==0.5.1
+numpy==1.15.1
+opencv-python==3.4.3.18
+Pillow==5.2.0
+tornado==5.1.1
