@@ -67,8 +67,7 @@ bash Anaconda3-5.3.0-Linux-x86_64.sh
 
 Activate the root environment
 ```
-source .bashrc
-source activate root
+source /home/ubuntu/anaconda3/bin/activate root
 ```
 
 ### Additional files
