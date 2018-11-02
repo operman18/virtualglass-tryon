@@ -56,7 +56,7 @@ You can click on synced to get your virtualglass synced with the image (there ma
 ```
 sudo apt-get update
 sudo apt-get -y upgrade gcc
-sudo apt-get install -y g++-7 cmake libsm6 libxrender1 libfontconfig1
+sudo apt-get install -y g++-7 -y cmake -y libsm6 -y libxrender1 -y libfontconfig1
 ```
 
 ### Install anaconda
