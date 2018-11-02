@@ -13,7 +13,7 @@ Finally, and most importantly, I used <a src="https://github.com/patrikhuber/eos
 ### Install dependencies
 ```
 sudo apt-get update
-sudo apt-get upgrade gcc
+sudo apt-get -y upgrade gcc
 sudo apt-get install -y g++-7 cmake libsm6 libxrender1 libfontconfig1
 ```
 
@@ -52,15 +52,15 @@ CC=`which gcc-7` CXX=`which g++-7`  pip install -r requirements.txt
 ```
 
 ### Final step 
-If you're using a web server. You should check if you machine is under a firewall, you will need to open port 8080.
+You should check if your machine is under a firewall, you will need to open port 8080.
 
 Launch the project with 
 ```
 python application.py
 ```
 
-
-## Requirements:
+## Regular install
+### Requirements:
 Preferred method is to install everything from pip/anaconda
 
 ```
@@ -72,7 +72,7 @@ N.B. : For eos and dlib, you may need to install gcc-7 and g++-7.  You will also
 CC=`which gcc-7` CXX=`which g++-7` pip install -r requirements.txt
 ```
 
-## Additional files:
+### Additional files:
 You should create a directory files, and store inside it all the models used by the app:
 ```
 mkdir files
@@ -87,10 +87,10 @@ expression_blendshapes_3448.bin
 ibug_to_sfm.txt
 sfm_3448_edge_topology.json
 ibug_to_sfm.txt
-model_contours.json
+sfm_model_contours.json
 ```
 
-## Usage
+### Usage
 You need to edit the file `index.html`and change the variable ws
 
 To launch the app, just run with python 3
