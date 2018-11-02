@@ -9,6 +9,48 @@ For the server side javascript, I used this <a src="https://github.com/matasarei
 
 Finally, and most importantly, I used <a src="https://github.com/patrikhuber/eos">eos</a> to get an accurate head pose estimator. This was the one that was the most accessible for a python user and It's fast enough to get let yoou process up to 20 images per second.
 
+## Regular install
+### Requirements:
+Preferred method is to install everything from pip/anaconda
+
+```
+pip install -r requirements.txt
+```
+
+N.B. : For eos and dlib, you may need to install gcc-7 and g++-7.  You will also need to install cmake.
+```
+CC=`which gcc-7` CXX=`which g++-7` pip install -r requirements.txt
+```
+
+### Additional files:
+You should create a directory files, and store inside it all the models used by the app:
+```
+mkdir files
+```
+
+The app also use dlib face detector <a src="https://github.com/davisking/dlib-models">download here ``
+
+You will need additional files to get the head pose estimation with eos. You can get those files on the github of the <a src="https://github.com/patrikhuber/eos/tree/master/share">project</a>:
+```
+sfm_shape_3448.bin
+expression_blendshapes_3448.bin
+ibug_to_sfm.txt
+sfm_3448_edge_topology.json
+ibug_to_sfm.txt
+sfm_model_contours.json
+```
+
+### Usage
+You need to edit the file `index.html`and change the variable ws
+
+To launch the app, just run with python 3
+```
+python application.py
+```
+
+Now, all you have to do is go to firefox <http://localhost:8080>, click on start to initiate the demo. There will be a 5 to 15 seconds latency in the beginning, before the glasses appear.
+You can click on synced to get your virtualglass synced with the image (there may be a small delay).
+
 ## Installation on aws ubuntu
 ### Install dependencies
 ```
@@ -58,45 +100,3 @@ Launch the project with
 ```
 python application.py
 ```
-
-## Regular install
-### Requirements:
-Preferred method is to install everything from pip/anaconda
-
-```
-pip install -r requirements.txt
-```
-
-N.B. : For eos and dlib, you may need to install gcc-7 and g++-7.  You will also need to install cmake.
-```
-CC=`which gcc-7` CXX=`which g++-7` pip install -r requirements.txt
-```
-
-### Additional files:
-You should create a directory files, and store inside it all the models used by the app:
-```
-mkdir files
-```
-
-The app also use dlib face detector <a src="https://github.com/davisking/dlib-models">download here ``
-
-You will need additional files to get the head pose estimation with eos. You can get those files on the github of the <a src="https://github.com/patrikhuber/eos/tree/master/share">project</a>:
-```
-sfm_shape_3448.bin
-expression_blendshapes_3448.bin
-ibug_to_sfm.txt
-sfm_3448_edge_topology.json
-ibug_to_sfm.txt
-sfm_model_contours.json
-```
-
-### Usage
-You need to edit the file `index.html`and change the variable ws
-
-To launch the app, just run with python 3
-```
-python application.py
-```
-
-Now, all you have to do is go to firefox <http://localhost:8080>, click on start to initiate the demo. There will be a 5 to 15 seconds latency in the beginning, before the glasses appear.
-You can click on synced to get your virtualglass synced with the image (there may be a small delay).
