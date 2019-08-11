@@ -4,103 +4,7 @@
     <title>Webcam over WebSocket using OpenCV and Tornado</title>
     <meta charset="utf-8">
     <script src="http://code.jquery.com/jquery-2.2.4.min.js"></script>
-    <style>
-     p {
-	 color: white;
-     }
-     
-     #overlay {
-	 position: absolute;
-	 top: 00px;
-	 left: 0px;
-	 -o-transform : scaleX(-1);
-	 -webkit-transform : scaleX(-1);
-	 transform : scaleX(-1);
-	 -ms-filter : fliph; /*IE*/
-	 filter : fliph; /*IE*/
-     }   
-     #notoverlay {
-	 -o-transform : scaleX(-1);
-	 -webkit-transform : scaleX(-1);
-	 transform : scaleX(-1);
-	 -ms-filter : fliph; /*IE*/
-	 filter : fliph; /*IE*/
-     }   
-     #camera {
-	 -o-transform : scaleX(-1);
-	 -webkit-transform : scaleX(-1);
-	 transform : scaleX(-1);
-	 -ms-filter : fliph; /*IE*/
-	 filter : fliph; /*IE*/
-	 border: 1px black dotted;
-     }
-     #camera-fake {
-	 width: 640px;
-	 height: 480px;
-	 -o-transform : scaleX(-1);
-	 -webkit-transform : scaleX(-1);
-	 transform : scaleX(-1);
-	 -ms-filter : fliph; /*IE*/
-	 filter : fliph; /*IE*/
-	 border: 1px black dotted;
-     }
-     #tryon,#live-tryon {
-	 position : relative;
-	 margin : 0px auto;
-     }
-     
-     #start {
-	 margin:0 ;
-	 width:100px;
-	 display: block;
-     }
-     
-     #debug {
-	 width:640px;
-	 margin: 0 auto;
-	 font-family: "Courier New", Courier, monospace;
-	 font-size: 11px;
-	 line-height:12px;
-     }
-
-     #btn-group {
-	 display: flex;
-     }
-
-     #btn-group > button {
-	 flex: 1;
-     }
-
-     ul.nav-tabs {
-	 border-bottom-color: gray;
-     }
-     
-     ul.nav-tabs > li.active > a {
-	 background-color: #9cc077;
-	 font-size: 14px;
-	 border-color: gray;
-	 font-color: black;
-	 font-weight: bold;
-     }
-
-     ul.nav-tabs > li > a {
-	 font-size: 14px;
-	 background-color: #363a3d;
-	 border-color: gray;
-	 color: white;
-	 font-weight: bold;
-     }
-
-     ul.nav-tabs > li > a:hover, ul.nav-tabs > li.active > a:hover {
-	 background-color: lightblue;
-	 color: black;
-     }
-
-     button#start {
-	 background-color: lightblue;
-     }
-
-    </style>
+    <link rel="stylesheet" href="index.css">
     <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
     <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
     <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
@@ -124,7 +28,6 @@
 	      <button id="fast">Fast</button>
 	      <button :not(:last)id="slow">Slow</button>
 	  </div>
-	  
 	  <div class="tab-content">
 	      <div id="default" class="tab-pane fade in active">
 		  <br>
@@ -134,7 +37,69 @@
 		      <video id="camera-fake" loop></video>
 		      <canvas id="overlay"></canvas>
 		  </div>
-
+		  <div id="position">
+		      <div id="switch">
+			  Manual/Auto <br>
+			  <label class="switch">
+			      <input id="manual" type="checkbox">
+			      <span class="slider"></span>
+			  </label>
+		      </div>
+		      <div id="manual-pos">
+			  <br>
+			  posx:
+			  <label class="tvec">
+			      <input id="posx" type="number" name="quantity" min="-5000" max="5000" value="0">
+			  </label>
+			  <br>
+			  posy:
+			  <label>
+			      <input id="posy" type="number" name="quantity" min="-5000" max="5000" value="0">
+			  </label>
+			  <br>
+			  posz:
+			  <label>
+			      <input id="posz" type="number" name="quantity" min="-5000" max="5000" value="0">
+			  </label>
+			  <br>
+			  size:
+			  <label>
+			      <input id="size" type="number" name="quantity" min="-5000" max="5000" value="180">
+			  </label>
+			  <br>
+			  rotx:
+			  <label class="tvec">
+			      <input id="rotx" type="number" name="quantity" min="-5000" max="5000" value="0">
+			  </label>
+			  <br>
+			  roty:
+			  <label>
+			      <input id="roty" type="number" name="quantity" min="-5000" max="5000" value="0">
+			  </label>
+			  <br>
+			  rotz:
+			  <label>
+			      <input id="rotz" type="number" name="quantity" min="-5000" max="5000" value="0">
+			  </label>
+		      </div>
+		      <div id="auto-pos">
+			  <br>
+			  posx auto:
+			  <label class="tvec">
+			      <input id="posx_auto" type="number" name="quantity" min="-5000" max="5000" value="0">
+			  </label>
+			  <br>
+			  posy auto:
+			  <label>
+			      <input id="posy_auto" type="number" name="quantity" min="-5000" max="5000" value="0">
+			  </label>
+			  <br>
+			  posz auto:
+			  <label>
+			      <input id="posz_auto" type="number" name="quantity" min="-5000" max="5000" value="0">
+			  </label>
+		      </div>
+		  </div>
 	      </div>
 	      <div id="synced" class="tab-pane fade">
 		  <br>
@@ -163,8 +128,11 @@
       <script src="js/utils.js"></script>
       <!-- three.js r54 -->
       <script src="js/three.js"></script>
-
+      <script src="js/try_on_face.js"></script>
       <script type="text/javascript" charset="utf-8">
+       /*
+	* Configure Tabs
+	*/
        $(document).on( 'click', 'a[data-toggle="tab"]', function (e) {
 	   var s=e.target.href;
 	   var i=s.indexOf('#');
@@ -178,387 +146,199 @@
 		   $("#overlay").appendTo("#tryon");
 	       }
        });
-       var conn = null;
-       var data = null;
-       var ready =null;
-       var fps = 20 ;
-       var updateRate = 50 ;
-       var count = 0;
-       var speed = 1;
-       var d = new Date();
-       var video = document.getElementById('camera');
-       var begin = d;
-       var c = 1;
-       var end = 0;
-       var frame = 0; //this variable gives us the timestamp of the latest frame
-       var end0 = new Date();
-       var opacity = 0;
+      
+      <script>
+       var tmp = null;
+       var VideoStream = function () {
+	   this.update = null;
+	   this.data = null;
+	   this.ready = null;
+	   this.fps = 20 ;
+	   this.count = 0;
+	   this.speed = 1;
+	   this.opacity = 1;
+	   
+	   this.video = document.getElementById('camera');
+	   this.updatePosition = function (){
+	       if(this.data)
+		   {
+		       $("#posx_auto").val(this.data.position.x);
+		       $("#posy_auto").val(this.data.position.y);
+		       $("#posz_auto").val(this.data.position.z);
+
+		       manual = $("#manual")[0].checked;
+		       if(manual)
+			   {
+			       this.data.position = {
+				   x: $("#posx").val(),
+				   y: $("#posy").val(),
+				   z: $("#posz").val()
+			       };
+			       this.data.size.x = $("#size").val();
+			   }
+		       else
+			   {
+			       $("#posx").val(this.data.position.x);
+			       $("#posy").val(this.data.position.y);
+			       $("#posz").val(this.data.position.z);
+			       if(this.data.opacity){
+			       }
+			   }
+		   }
+	   }
+	   this.momentum = 1.;
+	   this.momentum_opacity = .05;
+	   this.lag = 0;
+	   this.begin = null;	   
+	   this.last = new Date(); 
+       }
+
+       var interval = 50;
+       var stream = new VideoStream() ;
        
-       /*stream proof of concept*/
+       // We will draw the camera on notoverlay and stream it to the tornado server
        var notoverlay = document.getElementById("notoverlay");
        notoverlay.width=320;
        notoverlay.height=240;
        ctx = notoverlay.getContext('2d');
 
+       // This where the raw webcam stream
        this.videoStream = document.getElementById('camera-fake');
        this.videoStream.setAttribute('width', this.width);
        this.videoStream.setAttribute('height', this.height);       
        
+
+       // Connection to websocket
+       var last_message = 0;
        var connect2Websocket = function(){
            if ("WebSocket" in window) {
 
 	       var ws_path = 'ws://' + window.location.host + window.location.pathname + 'ws';
 	       var ws = new WebSocket (ws_path);
-
 	       
-               ws.onopen = function () {
-		   begin = new Date() ;
+	       ws.onopen = function () {
+		   stream.begin = new Date() ;
 		   ws.send(1);
-               };
-               ws.onclose = function () {
-		   //clearInterval(conn.update)
-               };
-               ws.onmessage = function (msg) {
-		   datanew = JSON.parse(msg.data);
-		   console.log('new data')
-		   console.log(datanew.timestamp)
-		   console.log(frame)
-		   if(datanew.timestamp && (datanew.timestamp>frame))
-		       {
-			  data = datanew;
-			  frame = datanew.timestamp;
-		   	  ready = null;
-		          video.setAttribute("src",data['image']);
-		          fps = data['speed'];
-		          ready = 1;
-	                  begin = new Date();
-                          count = count-1;
-		          end0 = new Date();
-		       }
-               };
-               ws.onerror = function (e) {
+	       };
+	       
+	       ws.onclose = function () {
+		   //clearInterval(stream.update);
+	       };
+	       
+	       ws.onmessage = function (msg) {
+		   stream.data = JSON.parse(msg.data);
+                   stream.count = stream.count-1;
+		   if(last_message < stream.data.timestamp)
+		      {
+			  last_message = stream.data.timestamp;
+		          stream.video.setAttribute("src",stream.data['image']);
+		          stream.fps = stream.data['speed'];
+	                  stream.begin = new Date();
+	              }
+	       };
+	       
+	       ws.onerror = function (e) {
 		   console.log(e);
 		   ws.send(1);
-               };
+	       };
+	       
 	       return ws;
 	       
-	       //conn.update = setInterval(update,updateRate);
-	       
            } else {
-               alert("WebSocket not supported");
+	       alert("WebSocket not supported");
            }
        };
-
-       
       </script>
 
       <script>
-       
-
-       /**
-	* Requires:
-	* three.js (r54) http://threejs.org/
-	* clmtrack https://github.com/auduno/clmtrackr
-	*
-	* @author Yevhen Matasar <matasar.ei@gmail.com>
-	* @param obj Params
-	* @returns obj Class instance
-	* @version 20150128
-	*/
-       var TryOnFace = function (params) {
-	   var ref = this;
-	   
-	   this.selector = 'tryon';
-	   this.selector_real = 'live-tryon'
-	   //sizes
-	   this.object = params.object;
-	   this.width = params.width;
-	   this.height = params.height;
-	   
-	   if (params.statusHandler) {
-	       this.statusHandler = params.statusHandler;
-	   } else {
-	       this.statusHandler = function(){};
+       // Define glasses
+       var object = {
+	   outside: {
+	       left:  "/glasses/left.png",
+	       right: "/glasses/right.png",
+	       front: "/glasses/front.png"
+	       
 	   }
-	   this.changeStatus = function(status) {
-	       this.status = status;
-	       this.statusHandler(this.status);
-	   };
-	   this.changeStatus('STATUS_READY');
-	   
-	   if (params.debug) {
-	       this.debug = true;
-	       this.debugMsg = this.status;
-	   } else {
-	       this.debug = false;
-	   }
-
-	   /* CAMERA */
-	   this.video = document.getElementById('camera');
-
-	   document.getElementById(this.selector).style.width = this.width + "px";
-	   document.getElementById(this.selector_real).style.width = this.width + "px";
-	   this.video.setAttribute('width', this.width);
-	   this.video.setAttribute('height', this.height);
-
-	   
-	   /**
-	    * Start try-on
-	    * @returns {undefined}
-	    */
-	   
-	   this.debug = function(msg) {
-	       if (this.debug) {
-		   this.debugMsg += msg + "<br>";
-	       }
-	   };
-	   
-	   this.start = function() {
-	       var vid = document.getElementById('camera-fake');
-
-	       var errorElement = document.querySelector('#errorMsg');
-
-	       // Put variables in global scope to make them available to the browser console.
-	       var constraints = window.constraints = {
-		   audio: false,
-		   video: true
-	       };
-
-	       function handleSuccess(stream) {
-		   vid.srcObject = stream;
-		   vid.play();
-	       }
-
-	       function handleError(error) {
-	   	   ref.changeStatus('STATUS_CAMERA_ERROR');
-	       }
-
-	       navigator.mediaDevices.getUserMedia(constraints).
-			 then(handleSuccess).catch(handleError);
-
-	       
-	       //continue in loop
-	       ref.rotation.x = 0;
-	   };
-
-
-	   this.printDebug = function() {
-	       if (this.debug) {
-		   document.getElementById('debug').innerHTML = 'the message '+this.debugMsg;
-		   this.debugMsg = '';
-	       }
-	   };
-	   
-	   this.loop = function() {
-	       requestAnimFrame(ref.loop);
-	       if(data)
-		   {
-		       ref.position.x = ref.position.x*(1-c)+c*data.position.x;
-		       ref.position.y = ref.position.y*(1-c)+c*data.position.y;
-		       ref.position.z = ref.position.z*(1-c)+c*data.position.z;
-                       ref.size.x = data.size.x;
-		       ref.rotation.z = data.rotation.z*c+(1-c)*ref.rotation.z;
-		       ref.rotation.y = data.rotation.y*c+(1-c)*ref.rotation.y;
-		       ref.rotation.x = data.rotation.x*c+(1-c)*ref.rotation.x;
-		   }
-	       else
-		   {
-		       ref.changeStatus('STATUS_SEARCH');
-		   }
-	       ref.debug(ref.status);
-	       
-	       //print debug
-	       ref.printDebug();
-	       ref.render();
-	       
-	   };
-	   
-	   /* 3D */
-	   var canvas = document.getElementById("overlay");
-	   var renderer = new THREE.WebGLRenderer({
-	       canvas: canvas,
-	       antialias: true,
-	       alpha: true
-	   });
-	   renderer.setClearColor(0xffffff, 0);
-	   renderer.setSize(this.width, this.height);
-	   
-	   
-	   //add scene
-	   var scene = new THREE.Scene;
-	   
-	   //define sides
-	   var outside = {
-	       0 : 'left',
-	       1 : 'right',
-	       4 : 'front'
-	   };
-	   
-	   this.images = [];
-	   var materials = [];
-	   for (i = 0; i < 6; i++) {
-	       if (this.object.outside[outside[i]] !== undefined) {
-		   var image = new Image();
-		   image.src = this.object.outside[outside[i]];
-		   this.images[outside[i]] = image;
-		   materials.push(new THREE.MeshLambertMaterial({
-		       map: THREE.ImageUtils.loadTexture(this.object.outside[outside[i]]), transparent: true
-		   }));
-	       } else {
-		   materials.push(new THREE.MeshLambertMaterial({
-		       color: 0xffffff, transparent: true, opacity: 0
-		   }));
-	       }
-	   }
-	   
-	   //init position and size
-	   this.position = {
-	       x: 0,
-	       y: 0,
-	       z: 0
-	   };
-	   this.rotation = {
-	       x: 0,
-	       y: 0,
-	       z: 0
-	   };
-	   this.size = {
-	       x: 1,
-	       y: 1,
-	       z: 1
-	   };
-	   
-	   //set up object
-	   var geometry = new THREE.CubeGeometry(1, 1, 1);
-	   var materials = new THREE.MeshFaceMaterial(materials);
-	   var cube = new THREE.Mesh( geometry, materials );
-	   cube.doubleSided = true;
-	   scene.add(cube);
-	   
-	   //set up camera
-	   var camera = new THREE.PerspectiveCamera(45, this.width / this.height, 1, 5000);
-	   camera.lookAt(cube.position);
-	   camera.position.z = this.width / 2;
-	   scene.add(camera);
-	   
-	   //set up lights
-	   var lightFront = new THREE.PointLight(0xffffff);
-	   lightFront.position.set(0, 0, 1000);
-	   lightFront.intensity = 2.0;
-	   scene.add(lightFront);
-	   
-	   var lightLeft = new THREE.PointLight(0xffffff);
-	   lightLeft.position.set(1000, 0, 0);
-	   lightLeft.intensity = 0.7;
-	   scene.add(lightLeft);
-	   
-	   var lightRight = new THREE.PointLight(0xffffff);
-	   lightRight.position.set(-1000, 0, 0);
-	   lightRight.intensity = 0.7;
-	   scene.add(lightRight);
-	   
-	   this.order = 'XYZ';
-	   
-	   /**
-	    * Render object
-	    */
-	   this.render = function() {
-	       //update position
-	       cube.position.x = this.position.x;
-	       cube.position.y = this.position.y;
-	       cube.position.z = this.position.z;
-	       
-	       cube.rotation.x = this.rotation.x;
-	       cube.rotation.y = this.rotation.y;
-	       cube.rotation.z = this.rotation.z;
-               var a = Math.abs(this.rotation.x)+Math.abs(this.rotation.y)*1.5+Math.abs(this.rotation.z)+Math.abs(this.rotation.y)*Math.abs(this.rotation.z)*4;
-	       opacity = opacity*0.98+(Math.pow(0.99,Math.abs(new Date()-begin)))*0.02*data['state']/0.4*((a<0.6)?1:((a>1.1)?0.0:1.3-a));
-               cube.material.materials[0].opacity = opacity;
-               cube.material.materials[1].opacity = opacity;
-               cube.material.materials[4].opacity = opacity;
-	       //upate size
-	       cube.scale.x = this.size.x;
-	       cube.scale.y = this.size.x/800*250;
-	       cube.scale.z = this.size.x;
-	       cube.eulerOrder=this.order
-	       //if(Math.abs(new Date-begin)*fps>1000*0.1&&ready)
-	       if(Math.abs(new Date-begin)*fps>600*speed)
-		   { 
-	               renderer.render(scene, camera);
-		   }
-	   };
-	   
-	   //print debug
-	   this.printDebug();
        };
-       
-       var tryOn = null;
-       $(window).load(function () {
-	   $('#start').hide();
-	   
-	   var object = {
-	       outside: {
-		   left:  "/glasses/left.png",
-		   right: "/glasses/right.png",
-		   front: "/glasses/front.png"
-		   
-	       }
-	   };
-	   
-	   tryOn = new TryOnFace({
-	       width: 640,
-	       height: 480,
-	       debug: true,
-	       object: object,
-	       statusHandler: function(status) {
-		   switch(status) {
-		       case "STATUS_READY": {
-			   /* Ready! Show start button or something... */
-			   $('#start').show();
-		       }; break;
-		       case "STATUS_CAMERA_ERROR": {
-			   /* Handle camera error */
-		       }; break;
-		       case "STATUS_SEARCH": {
-			   /* Show some message while searching a face */
-		       }; break;
-		       case "STATUS_FOUND": {
-			   /* OK! */
-		       }
+
+       // Initialize tryOn
+       var tryOn = new TryOnFace({
+	   opacity: stream.opacity,
+	   fps: stream.fps,
+	   speed: stream.speed,
+	   momentum_opacity: stream.momentum_opacity,
+	   momentum: stream.momentum,
+	   live_selector: 'live-tryon',
+	   selector: 'tryon',
+	   width: 640,
+	   height: 480,
+	   debug: true,
+	   object: object,
+	   statusHandler: function(status) {
+	       switch(status) {
+		   case "STATUS_READY": {
+		       /* Ready! Show start button or something... */
+		       $('#start').show();
+		   }; break;
+		   case "STATUS_CAMERA_ERROR": {
+		       /* Handle camera error */
+		   }; break;
+		   case "STATUS_SEARCH": {
+		       /* Show some message while searching a face */
+		   }; break;
+		   case "STATUS_FOUND": {
+		       /* OK! */
 		   }
 	       }
-	   });
-	   
-           
-           
-	   $('#start').click(function() {
+	   }
+       });
+
+       
+       /*
+	*  MENU
+	*/
+       $(window).load(function () {
+	   $('#start').click(function() {	       
 	       tryOn.start();
 	       var ws = connect2Websocket();
-               setInterval(function (){
-		   end = new Date()-end0;
-		   if (Math.random()*count<1)
+               stream.update = setInterval(function (){
+		   stream.lag = Math.abs(new Date()-stream.last);
+		   if (stream.count*Math.random()<1)
 		       {
-              		   ctx.drawImage(videoStream, 0, 0, 320, 240);
-	      		   var mediumQuality = notoverlay.toDataURL('image/jpeg', 0.3);
-                           image = mediumQuality.split(',')[1]
-                           timestamp = new Date().getTime();
-		           message = JSON.stringify({'image':image,'date':timestamp})
-	                   ws.send(message);
-			   count = count+1;
+			   if ( stream.begin )
+			       {
+              			   ctx.drawImage(videoStream, 0, 0, 320, 240);
+	      			   var mediumQuality = notoverlay.toDataURL('image/jpeg', 1)
+                                   var image = mediumQuality.split(',')[1];
+				   message = JSON.stringify(
+					   {
+						   "image":image,
+						   "timestamp":(new Date()).getTime(),
+						   "type":"image"
+					   }
+				   ) 
+				   ws.send(message);
+				   stream.count = stream.count+1;
+			       }
 		       }
-               },50)
+		   stream.updatePosition()
+		   tryOn.update(stream);
+		   stream.last = new Date();
+               },interval)
 	       tryOn.loop();
 	   });
+
 	   $('#vflip').click(function() {
 	       ctx.translate(0, 240);
 	       ctx.scale(1,-1);
 	   });
 	   
 	   $('#slow').click(function() {
-	       speed = 3.-speed;
+	       stream.speed = 3.-stream.speed;
 	   });
 	   $('#fast').click(function() {
-	       c = 1.05-c;
+	       stream.momentum = 1.05-stream.momentum;
+	       tryOn.update(stream);
 	   });
 	   $('.home a').click(function() {
 	       $("#overlay").appendTo("#tryon")
