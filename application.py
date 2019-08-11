@@ -11,7 +11,6 @@ Usage:
 # Import standard modules.
 import sys
 import io as StringIO
-
 from PIL import Image
 
 # Import 3rd-party modules.
@@ -19,6 +18,7 @@ from head_pose_estimation import PnpHeadPoseEstimator
 from tornado import websocket, web, ioloop, wsgi
 import numpy as np
 import coils
+from stream_pose import StreamProcessor
 
 import os
 import json
@@ -33,6 +33,7 @@ import base64
 import pdb
 
 app_directory = os.path.dirname(os.path.abspath(__file__))
+LANDMARK_FILE = os.path.join(app_directory,'files/shape_predictor_68_face_landmarks.dat')
 
 class IndexHandler(web.RequestHandler):
     def get(self):
@@ -44,14 +45,14 @@ class SocketHandler(websocket.WebSocketHandler):
         
         # Client to the socket server.
         # self._map_client = coils.MapSockClient(host, port, encode=False)
-        
         # Monitor the framerate at 1s, 5s, 10s intervals.
         self._fps = coils.RateTicker((1,5,10))
-        self.time = time()
-        self.count = 10**20
+        
+        self.now = time()
+        self.speed = 0
         
         self.detector = dlib.get_frontal_face_detector()
-        self.predictor = dlib.shape_predictor(os.path.join(app_directory,'files/shape_predictor_68_face_landmarks.dat'))
+        self.predictor = dlib.shape_predictor(LANDMARK_FILE)
         
         self.rects = []
         self.shape = 0
@@ -61,62 +62,71 @@ class SocketHandler(websocket.WebSocketHandler):
         self.cam_w = 320
         self.cam_h = 240
         
-        self.aT=np.array([1,-1,-1])
-        self.bT=np.array([0,20,-240])
-        self.aR=np.array([1,-1,-0.2])
-        self.bR=np.array([-1.15,-1.23,1.15])
-        self.poseEstimator=PnpHeadPoseEstimator(self.cam_w,self.cam_h)
-        self.speed = 1
+        self.aT = np.array([2,2,1])
+        self.bT = np.array([-320,-250,0])
+
+        self.aR = np.array([-1.0,0.75,-1.])
+        self.bR = np.array([0,0,0])
+
+        self.poseEstimator = PnpHeadPoseEstimator(self.cam_w,self.cam_h)
+        self.stream_processor = StreamProcessor(np.zeros((self.cam_w,self.cam_h)))
         
         self.computing = False
         self.rvecInc=0
         self.tvecInc=0
         self.found=None
-
-    def on_message(self, message):
-        t = time()
-        if len(message)>2000 and self.time*np.random.rand() < 0.05: # and self.speed>count :
-            image = Image.open(StringIO.BytesIO(base64.b64decode(message.encode('ascii'))))
-            cv_image = np.array(image)
-            
-            gray = cv2.cvtColor(cv_image, cv2.COLOR_BGR2GRAY)
-            # pdb.set_trace()
-            # detect faces in the grayscale frame
-            self.rects = self.detector(gray, 0)
-            if self.rects:
-                self.found = True
-            else:
-                self.found = False
-                # loop over the face detections
-            for rect in self.rects:
-                # determine the facial landmarks for the face region, then
-                # convert the facial landmark (x, y)-coordinates to a NumPy
-                # array
-                shapeInc = self.predictor(gray, rect)
-                shapeInc = face_utils.shape_to_np(shapeInc)
-                
-                print( "Face found")
-                self.shape = self.shape*0.+shapeInc*1.
-                rvecInc,tvecInc=self.poseEstimator.return_roll_pitch_yaw(self.shape,self.cam_w,self.cam_h)
-                pose = self.poseEstimator.return_roll_pitch_yaw_slow(self.shape,self.cam_w,self.cam_h)
-                self.rvecInc = pose.get_rotation_euler_angles()
-                self.rvec = self.rvec*0+self.rvecInc*1
-                tvecInc = self.aT*(tvecInc+self.bT)
-                self.tvec = self.tvec*0+tvecInc*1
+        self.image = ""
         
-        tvec = self.tvec + polar2vec(50,-self.rvec[0],-self.rvec[1])
+        self.max_time = 0 
+
+    def on_message(self, data):
+        if data == '1':
+            self.write_message("1")
+            return 
+
+        msg = json.loads(data)
+        image_str = msg['image']
+        date = msg['timestamp']
+
+        image = Image.open(StringIO.BytesIO(base64.b64decode(image_str.encode('ascii'))))
+        image.save('tmp.png','PNG')
+
+        frame = np.array(image)
+
+        # Swap red and blue channel
+        red = frame[:,:,0]
+        blue = frame[:,:,2]
+        frame[:,:,0] = blue
+        frame[:,:,2] = red
+    
+        frame_old = self.stream_processor.draw_shapes(frame.copy())
+        # print(base64.b64encode(frame_old))
+        image_str_new = str(base64.b64encode(frame_old))
+        pose_old, is_new = self.stream_processor.get_last_pose()
+
+        if pose_old is not None and is_new:
+            # print(pose_old)
+            self.rvec, self.tvec = post_process(pose_old[0],pose_old[1],self.aT,self.bT,self.aR,self.bR)
+            # print(self.tvec)
+            self.found = True
+            print(self.rvec)
+            self.image = image_str #message
+        else:
+            self.found = False
+
         posSizRot={
-            'position':{ 'x': tvec[0], 'y': tvec[1], 'z': tvec[2] }
+            'position':{ 'x': float(self.tvec[0]), 'y': float(self.tvec[1]), 'z': float(self.tvec[2]) }
             ,'rotation':{ 'x': float(self.rvec[0]), 'y': float(self.rvec[1]), 'z': float(self.rvec[2])}
-            ,'size':{ 'x': 150 }
-            ,'image':"data:image/jpeg;base64,"+message
+            ,'size':{ 'x':120*700/self.tvec[2] }
+            ,'image':"data:image/jpeg;base64,"+self.image
             ,'speed':self.speed
             ,'state':self.found
+            ,"timestamp":date
         }        
         
         #print "After count update"
         self.write_message(json.dumps(posSizRot))
-        self.time = self.time*0.65+(time()-t)*0.35
+        self.now = time()
         
         rate1,rate5,rate10 = self._fps.tick()
         self.speed = rate1
@@ -124,6 +134,13 @@ class SocketHandler(websocket.WebSocketHandler):
         # Print object ID and the framerate.
         text = '{} {:.2f}, {:.2f}, {:.2f} fps'.format(id(self), rate1 , rate5 , rate10 )
         print( text)
+
+
+def post_process(rvecInc,tvecInc,aT,bT,aR,bR):
+    rvec = aR*rvecInc+bR
+    tvecInc = aT*tvecInc+bT
+    tvec = tvecInc
+    return rvec,tvec
 
 
 def polar2vec(p,thtx,thty):
@@ -147,9 +164,7 @@ handlers = [
 
 tornado_app = web.Application(handlers)
 
-application = wsgi.WSGIAdapter(tornado_app)
-
 if __name__ == '__main__':
-    tornado_app.listen(8080)
+    tornado_app.listen(8081)
     ioloop.IOLoop.instance().start()
 

@@ -11,6 +11,7 @@
 import numpy as np
 import  cv2
 import eos
+import pickle
 
 import os
 import pdb
@@ -26,7 +27,8 @@ BLENDSHAPES = os.path.join(app_directory,"files/expression_blendshapes_3448.bin"
 L_MAPPER = os.path.join(app_directory,"files/ibug_to_sfm.txt")
 TOPOLOGY = os.path.join(app_directory,"files/sfm_3448_edge_topology.json")
 CONTOUR_L = os.path.join(app_directory,"files/ibug_to_sfm.txt")
-CONTOUR_M = os.path.join(app_directory,"files/sfm_model_contours.json")
+CONTOUR_M = os.path.join(app_directory,"files/model_contours.json")
+CAMERA_PARAM = os.path.join(app_directory,"files/camera_parameter_correct.pkl")
 
 class PnpHeadPoseEstimator:
     """ Head pose estimation class which uses the OpenCV PnP algorithm.
@@ -35,61 +37,63 @@ class PnpHeadPoseEstimator:
         It uses the PnP algorithm and it requires the dlib library
     """
 
-    def __init__(self, cam_w, cam_h):
+    def __init__(self, cam_w, cam_h, assets=None):
         """ Init the class
 
         @param cam_w the camera width. If you are using a 640x480 resolution it is 640
         @param cam_h the camera height. If you are using a 640x480 resolution it is 480
         @dlib_shape_predictor_file_path path to the dlib file for shape prediction (look in: deepgaze/etc/dlib/shape_predictor_68_face_landmarks.dat)
         """
-        
-        #Defining the camera matrix.
-        #To have better result it is necessary to find the focal
+
+        self.width = cam_w
+        self.height = cam_h
+
+        # Defining the camera matrix.
+        # To have better result it is necessary to find the focal
         # lenght of the camera. fx/fy are the focal lengths (in pixels) 
         # and cx/cy are the optical centres. These values can be obtained 
         # roughly by approximation, for example in a 640x480 camera:
-        # cx = 640/2 = 320
-        # cy = 480/2 = 240
-        # fx = fy = cx/tan(60/2 * pi / 180) = 554.26
-        c_x = cam_w / 2
-        c_y = cam_h / 2
-        f_x = c_x / np.tan(60/2 * np.pi / 180)
-        f_y = f_x
+        # pdb.set_trace()
+        if assets is None:
+            c_x = cam_w / 2
+            c_y = cam_h / 2
+            f_x = c_x / np.tan(60/2 * np.pi / 180)
+            f_y = f_x
         
-        #Estimated camera matrix values.
-        self.camera_matrix = np.float32([[f_x, 0.0, c_x],
+            #Estimated camera matrix values.
+            self.camera_matrix = np.float32([[f_x, 0.0, c_x],
                                          [0.0, f_y, c_y], 
                                          [0.0, 0.0, 1.0] ])
-        #These are the camera matrix values estimated on my webcam with
-        # the calibration code (see: src/calibration):
-        #camera_matrix = np.float32([[602.10618226,          0.0, 320.27333589],
-        #[         0.0, 603.55869786,  229.7537026], 
-        #[         0.0,          0.0,          1.0] ])
-        
-        #Distortion coefficients
-        self.camera_distortion = np.float32([0.0, 0.0, 0.0, 0.0, 0.0])
-        #Distortion coefficients estimated by calibration in my webcam
-        #camera_distortion = np.float32([ 0.06232237, -0.41559805,  0.00125389, -0.00402566,  0.04879263])
+            #These are the camera matrix values estimated on my webcam with
+            # the calibration code (see: src/calibration):
+            #Distortion coefficients
+            self.camera_distortion = np.float32([0,0,0,0,0])
+            #Distortion coefficients estimated by calibration in my webcam
+        else:
+            with open(assets,'rb') as param:
+                # print(assets)
+                # pdb.set_trace()
+                params = pickle.load(param)
+                self.camera_matrix = params['intrinsic_matrix']
+                self.camera_distortion = params["distortion_coefficients"]
 
         if(DEBUG==True): print("[DEEPGAZE] PnpHeadPoseEstimator: estimated camera matrix: \n" + str(self.camera_matrix) + "\n")
         # load face models
         
         self.model = eos.morphablemodel.load_model(MODEL)
         self.blendshapes = eos.morphablemodel.load_blendshapes(BLENDSHAPES)
-        self.morphablemodel_with_expressions = eos.morphablemodel.MorphableModel(self.model.get_shape_model(), self.blendshapes,
-                                                                        eos.morphablemodel.PcaModel(),
-                                                                        self.model.get_texture_coordinates())
+        # pdb.set_trace()
+        #self.morphablemodel_with_expressions = eos.morphablemodel.MorphableModel(shape_model=self.model.get_shape_model(),color_model=eos.morphablemodel.PcaModel(),texture_coordinates=self.model.get_texture_coordinates()) 
+        self.morphablemodel_with_expressions = eos.morphablemodel.MorphableModel(
+            self.model.get_shape_model(),
+            self.blendshapes,color_model=eos.morphablemodel.PcaModel(),
+            texture_coordinates=self.model.get_texture_coordinates())                                     
         self.landmark_mapper = eos.core.LandmarkMapper(L_MAPPER)
         self.edge_topology = eos.morphablemodel.load_edge_topology(TOPOLOGY)
         self.contour_landmarks = eos.fitting.ContourLandmarks.load(CONTOUR_L)
         self.model_contour = eos.fitting.ModelContour.load(CONTOUR_M)
         self.landmark_ids = list(map(str, range(1, 69))) # generates the numbers 1 to 68, as strings        
-        
-        
-        
-        
-        
-        
+
     def return_roll_pitch_yaw(self, landmarks, img_w, img_h, img_d=3, radians=True):
          """ Return the the roll pitch and yaw angles associated with the input image.
          
@@ -151,7 +155,12 @@ class PnpHeadPoseEstimator:
                                   P3D_STOMION])
          
          #Return the 2D position of our landmarks
-         landmarks_2D = landmarks[TRACKED_POINTS]
+         REAL_CENTER = np.array([[50,0,-10]]) # this is to avoid renormalizing the output vectors
+         landmarks_2D = landmarks[TRACKED_POINTS]  
+         landmarks_2D[:,0] = self.width - landmarks_2D[:,0]
+         landmarks_2D[:,1] = self.height - landmarks_2D[:,1]
+         landmarks_3D += REAL_CENTER
+         # print(landmarks[27])
          
          #Print som red dots on the image       
          #for point in landmarks_2D:
@@ -165,14 +174,33 @@ class PnpHeadPoseEstimator:
          #rvec - Output rotation vector that, together with tvec, brings 
          #points from the world coordinate system to the camera coordinate system.
          #tvec - Output translation vector. It is the position of the world origin (SELLION) in camera co-ords
+         # pdb.set_trace()
          retval, rvec, tvec = cv2.solvePnP(landmarks_3D, 
                                            landmarks_2D, 
                                            self.camera_matrix, 
                                            self.camera_distortion)
+         """
+         print(landmarks_3D, 
+               landmarks.tolist(), 
+               self.camera_matrix, 
+               self.camera_distortion)
+         """
+         tvec0 = self.camera_matrix.dot(tvec)
+         tvec0 = tvec0/tvec0[2]
+         # print(tvec0)
          
-         return rvec.T[0],tvec.T[0]
+         print(tvec0)
+         tvec1 = np.array([np.concatenate([landmarks[36:48].mean(axis=0),np.array([1])])]).T
+         print("tvec1",tvec1)
+         tvec1[0,0] = self.width - tvec1[0,0]
+         tvec1[1,0] = self.height - tvec1[1,0]
+         return rvec.T[0],tvec.T[0],tvec1.T[0]
      
     def return_roll_pitch_yaw_slow(self,landmarks,cam_w,cam_h):
+        # pdb.set_trace()
         landmarks_new = [eos.core.Landmark(str(i+1),[l[0],l[1]]) for i,l in enumerate(landmarks)]
         (mesh, pose, shape_coeffs, blendshape_coeffs) = eos.fitting.fit_shape_and_pose(self.morphablemodel_with_expressions, landmarks_new, self.landmark_mapper, cam_w, cam_h, self.edge_topology, self.contour_landmarks, self.model_contour, num_iterations=1)
+        # PYTHON2.7
+        # landmark_ids = list(map(str, range(1, 69)))
+        # (mesh, pose, shape_coeffs, blendshape_coeffs) = eos.fitting.fit_shape_and_pose(morphable_model=self.morphablemodel_with_expressions,blendshapes=self.blendshapes,landmarks=landmarks.tolist(),landmark_ids=landmark_ids,landmark_mapper=self.landmark_mapper,image_width=cam_w,image_height=cam_h,edge_topology=self.edge_topology,contour_landmarks=self.contour_landmarks,model_contour=self.model_contour,num_iterations=1)
         return pose
