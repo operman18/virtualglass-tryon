@@ -190,6 +190,7 @@
        var begin = d;
        var c = 1;
        var end = 0;
+       var frame = 0; //this variable gives us the timestamp of the latest frame
        var end0 = new Date();
        var opacity = 0;
        
@@ -218,13 +219,22 @@
 		   //clearInterval(conn.update)
                };
                ws.onmessage = function (msg) {
-		   data=JSON.parse(msg.data);
-		   ready = null;
-		   video.setAttribute("src",data['image']);
-		   fps = data['speed'];
-		   ready = 1;
-	           begin = new Date();
-                   count = count-1;
+		   datanew = JSON.parse(msg.data);
+		   console.log('new data')
+		   console.log(datanew.timestamp)
+		   console.log(frame)
+		   if(datanew.timestamp && (datanew.timestamp>frame))
+		       {
+			  data = datanew;
+			  frame = datanew.timestamp;
+		   	  ready = null;
+		          video.setAttribute("src",data['image']);
+		          fps = data['speed'];
+		          ready = 1;
+	                  begin = new Date();
+                          count = count-1;
+		          end0 = new Date();
+		       }
                };
                ws.onerror = function (e) {
 		   console.log(e);
@@ -462,7 +472,7 @@
 	       cube.rotation.y = this.rotation.y;
 	       cube.rotation.z = this.rotation.z;
                var a = Math.abs(this.rotation.x)+Math.abs(this.rotation.y)*1.5+Math.abs(this.rotation.z)+Math.abs(this.rotation.y)*Math.abs(this.rotation.z)*4;
-	       opacity = opacity*0.95+(Math.pow(0.99,Math.abs(new Date()-begin)))*0.05*data['state']/0.4*((a<0.6)?1:((a>1.1)?0.0:1.3-a));
+	       opacity = opacity*0.98+(Math.pow(0.99,Math.abs(new Date()-begin)))*0.02*data['state']/0.4*((a<0.6)?1:((a>1.1)?0.0:1.3-a));
                cube.material.materials[0].opacity = opacity;
                cube.material.materials[1].opacity = opacity;
                cube.material.materials[4].opacity = opacity;
@@ -525,15 +535,17 @@
 	       tryOn.start();
 	       var ws = connect2Websocket();
                setInterval(function (){
-		   end = 0.1*Math.abs(new Date()-end0)+0.9*end;
-		   if (end*Math.random()<50)
+		   end = new Date()-end0;
+		   if (Math.random()*count<1)
 		       {
               		   ctx.drawImage(videoStream, 0, 0, 320, 240);
-	      		   var mediumQuality = notoverlay.toDataURL('image/jpeg', 0.3)
-			   ws.send(mediumQuality.split(',')[1]);
+	      		   var mediumQuality = notoverlay.toDataURL('image/jpeg', 0.3);
+                           image = mediumQuality.split(',')[1]
+                           timestamp = new Date().getTime();
+		           message = JSON.stringify({'image':image,'date':timestamp})
+	                   ws.send(message);
 			   count = count+1;
 		       }
-		   end0 = new Date();
                },50)
 	       tryOn.loop();
 	   });
