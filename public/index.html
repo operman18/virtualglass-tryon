@@ -146,6 +146,7 @@
 		   $("#overlay").appendTo("#tryon");
 	       }
        });
+      </script>
       
       <script>
        var tmp = null;
@@ -308,7 +309,7 @@
 			   if ( stream.begin )
 			       {
               			   ctx.drawImage(videoStream, 0, 0, 320, 240);
-	      			   var mediumQuality = notoverlay.toDataURL('image/jpeg', 1)
+	      			   var mediumQuality = notoverlay.toDataURL('image/jpeg', 0.3)
                                    var image = mediumQuality.split(',')[1];
 				   message = JSON.stringify(
 					   {

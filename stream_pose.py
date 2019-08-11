@@ -1,5 +1,4 @@
 from head_pose_estimation import PnpHeadPoseEstimator
-#from multiprocessing import Process, Queue
 from time import time
 
 import os
@@ -9,13 +8,10 @@ import pdb
 import dlib
 import cv2
 from imutils import face_utils
-from os_detector import detect_os
-from pose_estimator import PoseEstimator
 
 # import estimate_head_pose
 
 # multiprocessing may not work on Windows and macOS, check OS for safety.
-detect_os()
 
 CNN_INPUT_SIZE = 128
 
@@ -50,7 +46,6 @@ class StreamProcessor(object):
         self.alpha = alpha # alpha is the interval of the stream in seconds
         self.gamma = gamma # gamma is the momentum of of the lag
 
-        self.pose_estimator = PoseEstimator(img_size=(self.cam_w, self.cam_h),)
         self.pose = None
         self.pose_smooth = None
         self.is_new = True
@@ -141,8 +136,8 @@ class StreamProcessor(object):
 
     def draw_boxes(self,frame):
         pose = self.find_stable_pose(frame)
-        if pose is not None:
-            return self.draw_pose(frame,pose)
+        #if pose is not None:
+        #return self.draw_pose(frame,pose)
 
         return frame
 
