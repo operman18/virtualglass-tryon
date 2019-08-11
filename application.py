@@ -30,6 +30,8 @@ import  cv2
 from time import time
 
 import base64
+from io import BytesIO
+
 import pdb
 
 app_directory = os.path.dirname(os.path.abspath(__file__))
@@ -88,52 +90,55 @@ class SocketHandler(websocket.WebSocketHandler):
         image_str = msg['image']
         date = msg['timestamp']
 
-        image = Image.open(StringIO.BytesIO(base64.b64decode(image_str.encode('ascii'))))
-        image.save('tmp.png','PNG')
+        if date > self.max_time:
+            image = Image.open(StringIO.BytesIO(base64.b64decode(image_str.encode('ascii'))))
+            #image.save('tmp.png','PNG')
 
-        frame = np.array(image)
+            frame = np.array(image)
 
-        # Swap red and blue channel
-        red = frame[:,:,0]
-        blue = frame[:,:,2]
-        frame[:,:,0] = blue
-        frame[:,:,2] = red
+            # Swap red and blue channel
+            red = frame[:,:,0]
+            blue = frame[:,:,2]
+            frame[:,:,0] = blue
+            frame[:,:,2] = red
     
-        frame_old = self.stream_processor.draw_shapes(frame.copy())
-        # print(base64.b64encode(frame_old))
-        image_str_new = str(base64.b64encode(frame_old))
-        pose_old, is_new = self.stream_processor.get_last_pose()
+            frame_old = self.stream_processor.draw_shapes(frame.copy())
+            # print(base64.b64encode(frame_old))
+            pose_old, is_new = self.stream_processor.get_last_pose()
 
-        if pose_old is not None and is_new:
-            # print(pose_old)
-            self.rvec, self.tvec = post_process(pose_old[0],pose_old[1],self.aT,self.bT,self.aR,self.bR)
-            # print(self.tvec)
-            self.found = True
-            print(self.rvec)
-            self.image = image_str #message
-        else:
-            self.found = False
+            if pose_old is not None and is_new:
+                # print(pose_old)
+                self.rvec, self.tvec = post_process(pose_old[0],pose_old[1],self.aT,self.bT,self.aR,self.bR)
+                # print(self.tvec)
+                self.found = True
+                #print(self.rvec)
+                self.image = image_str #message
+                image_str_new = image_str
+            else:
+                blur = cv2.blur(np.array(image),(15,15))
+                image_str_new = array2string(blur)
+                self.found = False
 
-        posSizRot={
-            'position':{ 'x': float(self.tvec[0]), 'y': float(self.tvec[1]), 'z': float(self.tvec[2]) }
-            ,'rotation':{ 'x': float(self.rvec[0]), 'y': float(self.rvec[1]), 'z': float(self.rvec[2])}
-            ,'size':{ 'x':120*700/self.tvec[2] }
-            ,'image':"data:image/jpeg;base64,"+self.image
-            ,'speed':self.speed
-            ,'state':self.found
-            ,"timestamp":date
-        }        
+            posSizRot={
+                'position':{ 'x': float(self.tvec[0]), 'y': float(self.tvec[1]), 'z': float(self.tvec[2]) }
+                ,'rotation':{ 'x': float(self.rvec[0]), 'y': float(self.rvec[1]), 'z': float(self.rvec[2])}
+                ,'size':{ 'x':120*700/self.tvec[2] }
+                ,'image':"data:image/jpeg;base64,"+image_str_new
+                ,'speed':self.speed
+                ,'state':self.found
+                ,"timestamp":date
+            }        
         
-        #print "After count update"
-        self.write_message(json.dumps(posSizRot))
-        self.now = time()
+            #print "After count update"
+            self.write_message(json.dumps(posSizRot))
+            self.now = time()
         
-        rate1,rate5,rate10 = self._fps.tick()
-        self.speed = rate1
+            rate1,rate5,rate10 = self._fps.tick()
+            self.speed = rate1
         
-        # Print object ID and the framerate.
-        text = '{} {:.2f}, {:.2f}, {:.2f} fps'.format(id(self), rate1 , rate5 , rate10 )
-        print( text)
+            # Print object ID and the framerate.
+            text = '{} {:.2f}, {:.2f}, {:.2f} fps'.format(id(self), rate1 , rate5 , rate10 )
+            print( text)
 
 
 def post_process(rvecInc,tvecInc,aT,bT,aR,bR):
@@ -145,6 +150,13 @@ def post_process(rvecInc,tvecInc,aT,bT,aR,bR):
 
 def polar2vec(p,thtx,thty):
     return p*np.array([np.cos(thtx)*np.sin(thty),-np.sin(thtx),-np.cos(thtx)*np.cos(thty)])
+
+def array2string(img):
+    pil_img = Image.fromarray(img)
+    buff = BytesIO()
+    pil_img.save(buff, format="JPEG")
+    new_image_string = base64.b64encode(buff.getvalue()).decode("utf-8")
+    return new_image_string
 
 # Retrieve command line arguments.
 
