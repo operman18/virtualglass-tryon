@@ -73,9 +73,15 @@ class SocketHandler(websocket.WebSocketHandler):
         self.tvecInc=0
         self.found=None
 
-    def on_message(self, message):
-        t = time()
-        if len(message)>2000 and self.time*np.random.rand() < 0.05: # and self.speed>count :
+    def on_message(self, data):
+        if data == '1':
+            self.write_message("1")
+            return 
+
+        msg = json.loads(data)
+        message = msg['image']
+        date = msg['date']
+        if len(message)>2000 : # and self.speed>count :
             image = Image.open(StringIO.BytesIO(base64.b64decode(message.encode('ascii'))))
             cv_image = np.array(image)
             
@@ -112,11 +118,12 @@ class SocketHandler(websocket.WebSocketHandler):
             ,'image':"data:image/jpeg;base64,"+message
             ,'speed':self.speed
             ,'state':self.found
+            ,'timestamp':date
         }        
         
         #print "After count update"
         self.write_message(json.dumps(posSizRot))
-        self.time = self.time*0.65+(time()-t)*0.35
+        self.time = time()
         
         rate1,rate5,rate10 = self._fps.tick()
         self.speed = rate1
