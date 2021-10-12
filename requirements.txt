@@ -3,6 +3,6 @@ dlib==19.15.0
 eos-py==0.16.1
 imutils==0.5.1
 numpy==1.15.1
-opencv-python==3.4.3.18
+opencv-python==3.4.7.28
 tornado==5.1.1
 pillow>=6.2.0
